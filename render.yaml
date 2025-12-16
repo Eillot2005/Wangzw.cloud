@@ -33,10 +33,7 @@ services:
     plan: free
     envVars:
       - key: VITE_API_BASE_URL
-        fromService:
-          type: web
-          name: wangzw-backend
-          property: hostWithScheme
+        value: https://wangzw-backend.onrender.com
 
 databases:
   - name: wangzw-db
