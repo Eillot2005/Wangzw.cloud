@@ -36,7 +36,7 @@ services:
         fromService:
           type: web
           name: wangzw-backend
-          property: host
+          property: hostWithScheme
 
 databases:
   - name: wangzw-db
