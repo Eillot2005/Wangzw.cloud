@@ -15,6 +15,8 @@ from app.schemas.todo import TodoResponse
 from app.schemas.message import MessageResponse
 from app.schemas.audit_log import AuditLogResponse
 
+from app.models.photo import Photo, PhotoStatus
+
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
@@ -58,26 +60,15 @@ def get_overview(
         )
     ).count()
     
-    # Picture view stats
-    picture_view_today = db.query(AuditLog).filter(
-        and_(
-            AuditLog.user_id == friend.id,
-            AuditLog.action == "PICTURE_VIEW",
-            func.date(AuditLog.created_at) == today
-        )
-    ).count()
+    # Photo stats (Pending)
+    pending_photos = db.query(Photo).filter(Photo.status == PhotoStatus.PENDING).count()
     
-    picture_view_last_7d = db.query(AuditLog).filter(
-        and_(
-            AuditLog.user_id == friend.id,
-            AuditLog.action == "PICTURE_VIEW",
-            AuditLog.created_at >= last_7d
-        )
-    ).count()
-    
-    # Last actions
+    # Last actions (Exclude PICTURE_VIEW)
     last_actions = db.query(AuditLog).filter(
-        AuditLog.user_id == friend.id
+        and_(
+            AuditLog.user_id == friend.id,
+            AuditLog.action != "PICTURE_VIEW"
+        )
     ).order_by(AuditLog.created_at.desc()).limit(10).all()
     
     last_actions_data = []
@@ -95,8 +86,7 @@ def get_overview(
         "message_total": message_total,
         "external_call_today": external_call_today,
         "external_call_last_7d": external_call_last_7d,
-        "picture_view_today": picture_view_today,
-        "picture_view_last_7d": picture_view_last_7d,
+        "pending_photos": pending_photos,
         "last_actions": last_actions_data
     }
 
@@ -104,6 +94,7 @@ def get_overview(
 @router.get("/audit", response_model=List[AuditLogResponse])
 def get_audit_logs(
     action: Optional[str] = Query(None, description="Filter by action"),
+    exclude_actions: Optional[str] = Query("PICTURE_VIEW", description="Comma separated actions to exclude"),
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     limit: int = Query(100, ge=1, le=500),
@@ -117,6 +108,10 @@ def get_audit_logs(
     # Apply filters
     if action:
         query = query.filter(AuditLog.action == action)
+    
+    if exclude_actions:
+        excludes = [a.strip() for a in exclude_actions.split(",")]
+        query = query.filter(AuditLog.action.notin_(excludes))
     
     if start_date:
         try:
@@ -143,6 +138,64 @@ def get_audit_logs(
         result.append(log_response)
     
     return result
+
+# Photo Review Endpoints
+
+@router.get("/photos/pending", response_model=List[dict])
+def list_pending_photos(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(["ADMIN"]))
+):
+    """List all pending photos for review."""
+    photos = db.query(Photo).filter(Photo.status == PhotoStatus.PENDING).order_by(Photo.created_at.desc()).all()
+    return [
+        {
+            "id": p.id,
+            "filename": p.filename,
+            "created_at": p.created_at,
+            "uploader_id": p.uploader_id
+        }
+        for p in photos
+    ]
+
+@router.post("/photos/{photo_id}/approve")
+def approve_photo(
+    photo_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(["ADMIN"]))
+):
+    """Approve a photo."""
+    photo = db.query(Photo).filter(Photo.id == photo_id).first()
+    if not photo:
+        raise HTTPException(status_code=404, detail="Photo not found")
+        
+    photo.status = PhotoStatus.APPROVED
+    photo.reviewed_at = datetime.utcnow()
+    photo.reviewed_by = current_user.id
+    db.commit()
+    
+    log_action(db, current_user.id, "PHOTO_APPROVE", "PHOTO", str(photo.id))
+    return {"status": "success"}
+
+@router.post("/photos/{photo_id}/reject")
+def reject_photo(
+    photo_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(["ADMIN"]))
+):
+    """Reject a photo."""
+    photo = db.query(Photo).filter(Photo.id == photo_id).first()
+    if not photo:
+        raise HTTPException(status_code=404, detail="Photo not found")
+        
+    photo.status = PhotoStatus.REJECTED
+    photo.reviewed_at = datetime.utcnow()
+    photo.reviewed_by = current_user.id
+    db.commit()
+    
+    log_action(db, current_user.id, "PHOTO_REJECT", "PHOTO", str(photo.id))
+    return {"status": "success"}
+
 
 
 @router.get("/friend/todos", response_model=List[TodoResponse])

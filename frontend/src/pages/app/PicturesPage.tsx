@@ -2,19 +2,20 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Layout from '../../components/Layout';
 import ParticlesBackground from '../../components/ParticlesBackground';
-import { picturesApi, PictureInfo } from '../../api/pictures';
+import { photosApi, Photo } from '../../api/photos';
 import { theme } from '../../styles/theme';
 import './PicturesPage.css';
 
 export default function PicturesPage() {
-  const [pictures, setPictures] = useState<PictureInfo[]>([]);
+  const [pictures, setPictures] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<PictureInfo | null>(null);
+  const [selectedImage, setSelectedImage] = useState<Photo | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const loadPictures = async () => {
     setLoading(true);
     try {
-      const data = await picturesApi.list();
+      const data = await photosApi.list();
       setPictures(data);
     } catch (err: any) {
       console.error('Load pictures error:', err);
@@ -31,40 +32,77 @@ export default function PicturesPage() {
   const getImageUrl = (filename: string) => {
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
     const token = localStorage.getItem('token');
-    return `${apiBaseUrl}/pictures/${filename}?token=${token}`;
+    return `${apiBaseUrl}/photos/${filename}?token=${token}`;
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    
+    if (file.size > 8 * 1024 * 1024) {
+      alert('文件大小不能超过 8MB');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      await photosApi.upload(file);
+      alert('已提交，等待审核');
+      // Don't reload list immediately as it's pending
+    } catch (err: any) {
+      alert(err.response?.data?.detail || '上传失败');
+    } finally {
+      setUploading(false);
+      // Clear input
+      e.target.value = '';
+    }
   };
 
   return (
     <Layout role="FRIEND">
-      <ParticlesBackground />
       <div style={{
         maxWidth: '1200px',
         margin: '0 auto',
-        position: 'relative',
-        zIndex: 1,
+        padding: '20px',
       }}>
-        <motion.div
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, type: "spring" }}
-        >
-          <h1 style={{
-            marginBottom: '40px',
-            textAlign: 'center',
-            fontSize: '48px',
-            fontWeight: '900',
-            background: 'linear-gradient(45deg, #ff0066, #ff6b9d, #ffcc00)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            filter: 'drop-shadow(0 4px 8px rgba(255, 105, 180, 0.4))',
-            letterSpacing: '2px',
+        <h1 style={{
+          marginBottom: '20px',
+          textAlign: 'center',
+          fontSize: '48px',
+          fontWeight: '900',
+          background: 'linear-gradient(45deg, #ff0066, #ff6b9d, #ffcc00)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          filter: 'drop-shadow(0 4px 8px rgba(255, 105, 180, 0.4))',
+          letterSpacing: '2px',
+        }}>
+          💖 你的❤美好 💖
+        </h1>
+
+        {/* Upload Section */}
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <label style={{
+            display: 'inline-block',
+            padding: '12px 24px',
+            background: 'linear-gradient(45deg, #ff6b81, #ff9a9e)',
+            color: 'white',
+            borderRadius: '30px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            boxShadow: '0 4px 15px rgba(255, 107, 129, 0.4)',
+            transition: 'transform 0.2s',
           }}>
-            <span className="heart-icon" style={{ display: 'inline-block', animation: 'pulse 1.5s infinite' }}>💖</span> 
-            你的❤美好 
-            <span className="heart-icon" style={{ display: 'inline-block', animation: 'pulse 1.5s infinite' }}>💖</span>
-          </h1>
-        </motion.div>
+            {uploading ? '上传中...' : '📸 上传新照片'}
+            <input 
+              type="file" 
+              accept="image/jpeg,image/png,image/webp" 
+              style={{ display: 'none' }} 
+              onChange={handleUpload}
+              disabled={uploading}
+            />
+          </label>
+        </div>
 
         {loading ? (
           <div style={{
@@ -98,20 +136,19 @@ export default function PicturesPage() {
           }}>
             {pictures.map((picture, index) => (
               <motion.div
-                key={picture.name}
-                initial={{ opacity: 0, scale: 0.8, y: 50, boxShadow: "0 0 0 0 rgba(0,0,0,0)" }}
-                animate={{ opacity: 1, scale: 1, y: 0, boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)" }}
+                key={picture.filename}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ 
-                  delay: index * 0.1,
-                  type: "spring",
-                  stiffness: 100
+                  delay: Math.min(index * 0.05, 0.5),
+                  duration: 0.3
                 }}
                 whileHover={{ 
-                  scale: 1.05,
-                  rotate: Math.random() * 4 - 2,
+                  scale: 1.03,
                   zIndex: 10,
-                  boxShadow: "0 25px 50px -12px rgba(255, 105, 180, 0.6)" 
+                  boxShadow: "0 20px 40px -12px rgba(255, 105, 180, 0.5)" 
                 }}
+                style={{ willChange: 'transform' }}
                 className="picture-card romantic-card"
                 onClick={() => setSelectedImage(picture)}
                 style={{ 
@@ -135,8 +172,8 @@ export default function PicturesPage() {
                   width: '100%'
                 }}>
                   <img
-                    src={getImageUrl(picture.name)}
-                    alt={picture.name || '照片'}
+                    src={getImageUrl(picture.filename)}
+                    alt={picture.filename || '照片'}
                     className="picture-image"
                     loading="lazy"
                     style={{ 
@@ -157,7 +194,7 @@ export default function PicturesPage() {
                   fontSize: '0.9em',
                   height: '20px'
                 }}>
-                  {picture.created_at ? new Date(picture.created_at * 1000).toLocaleDateString('zh-CN') : ''}
+                  {picture.created_at ? new Date(picture.created_at).toLocaleDateString('zh-CN') : ''}
                 </div>
               </motion.div>
             ))}
@@ -199,8 +236,8 @@ export default function PicturesPage() {
                 }}
               >
                 <img
-                  src={getImageUrl(selectedImage.name)}
-                  alt={selectedImage.name || '照片'}
+                  src={getImageUrl(selectedImage.filename)}
+                  alt={selectedImage.filename || '照片'}
                   style={{
                     maxWidth: '100%',
                     maxHeight: '90vh',

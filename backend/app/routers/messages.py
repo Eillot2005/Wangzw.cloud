@@ -1,6 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+from datetime import datetime
 
 from app.db.session import get_db
 from app.models.user import User
@@ -35,6 +36,37 @@ def list_messages(
     return result
 
 
+@router.get("/unread_count")
+def get_unread_count(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get count of unread messages for current user."""
+    count = db.query(Message).filter(
+        Message.receiver_id == current_user.id,
+        Message.read_at == None
+    ).count()
+    return {"unread": count}
+
+
+@router.post("/mark_read")
+def mark_messages_read(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Mark all unread messages for current user as read."""
+    unread_messages = db.query(Message).filter(
+        Message.receiver_id == current_user.id,
+        Message.read_at == None
+    ).all()
+    
+    for msg in unread_messages:
+        msg.read_at = datetime.utcnow()
+    
+    db.commit()
+    return {"status": "success", "marked_count": len(unread_messages)}
+
+
 @router.post("", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 def create_message(
     message: MessageCreate,
@@ -42,8 +74,20 @@ def create_message(
     current_user: User = Depends(get_current_user)
 ):
     """Create a new message (admin and friend)."""
+    # Determine receiver
+    receiver_id = None
+    if current_user.role == "ADMIN":
+        friend = db.query(User).filter(User.role == "FRIEND").first()
+        if friend:
+            receiver_id = friend.id
+    else:
+        admin = db.query(User).filter(User.role == "ADMIN").first()
+        if admin:
+            receiver_id = admin.id
+
     new_message = Message(
         sender_id=current_user.id,
+        receiver_id=receiver_id,
         content=message.content
     )
     db.add(new_message)

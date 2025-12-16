@@ -13,6 +13,7 @@ import AdminOverview from '../pages/admin/AdminOverview';
 import AuditLogPage from '../pages/admin/AuditLogPage';
 import FriendTodosPage from '../pages/admin/FriendTodosPage';
 import FriendMessagesPage from '../pages/admin/FriendMessagesPage';
+import PhotoReviewPage from '../pages/admin/PhotoReviewPage';
 
 export default function AppRouter() {
   return (
@@ -42,6 +43,7 @@ export default function AppRouter() {
           <Route path="audit" element={<AuditLogPage />} />
           <Route path="friend-todos" element={<FriendTodosPage />} />
           <Route path="friend-messages" element={<FriendMessagesPage />} />
+          <Route path="photos" element={<PhotoReviewPage />} />
         </Route>
 
         {/* Default redirect */}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Layout from '../../components/Layout';
 import ParticlesBackground from '../../components/ParticlesBackground';
+import EasterEgg from '../../components/EasterEgg';
 import { messagesApi, Message } from '../../api/messages';
 import { theme } from '../../styles/theme';
 
@@ -9,6 +10,7 @@ export default function MessagesPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newContent, setNewContent] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showEasterEgg, setShowEasterEgg] = useState(false);
   const currentUser = localStorage.getItem('username') || '';
 
   const loadMessages = async () => {
@@ -25,6 +27,7 @@ export default function MessagesPage() {
 
   useEffect(() => {
     loadMessages();
+    messagesApi.markRead();
   }, []);
 
   const handleCreate = async () => {
@@ -34,9 +37,18 @@ export default function MessagesPage() {
       return;
     }
     try {
+      // 检查是否包含love关键词
+      const hasLove = newContent.toLowerCase().includes('love');
+      
       await messagesApi.create({ content: newContent });
       setNewContent('');
-      loadMessages();
+      await loadMessages();
+      
+      // 如果包含love，在消息加载完成后触发彩蛋
+      if (hasLove) {
+        console.log('[MessagesPage] Love keyword detected, triggering easter egg');
+        setTimeout(() => setShowEasterEgg(true), 100);
+      }
     } catch (err: any) {
       alert(err.response?.data?.detail || '发送失败');
     }
@@ -59,6 +71,7 @@ export default function MessagesPage() {
   return (
     <Layout role="FRIEND">
       <ParticlesBackground />
+      <EasterEgg show={showEasterEgg} onComplete={() => setShowEasterEgg(false)} />
       <div style={{
         maxWidth: '900px',
         margin: '0 auto',
@@ -193,7 +206,15 @@ export default function MessagesPage() {
                         paddingLeft: fromAdmin ? '0' : '12px',
                         paddingRight: fromAdmin ? '12px' : '0',
                       }}>
-                        {new Date(msg.created_at).toLocaleString('zh-CN')}
+                        {new Date(msg.created_at + 'Z').toLocaleString('zh-CN', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                          hour12: false
+                        })}
                       </div>
                     </div>
                   </motion.div>

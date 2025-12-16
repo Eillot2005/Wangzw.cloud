@@ -23,7 +23,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         )
     
     # Create access token (sub must be a string according to JWT spec)
-    access_token = create_access_token(data={"sub": str(user.id)})
+    access_token = create_access_token(data={"sub": str(user.id), "role": user.role})
     
     # Log login action
     log_action(

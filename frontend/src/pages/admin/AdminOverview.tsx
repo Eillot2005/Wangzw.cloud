@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { adminApi, Overview } from '../../api/admin';
 
 export default function AdminOverview() {
+  const navigate = useNavigate();
   const [overview, setOverview] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -54,12 +56,16 @@ export default function AdminOverview() {
             subtitle={`最近7天: ${overview.external_call_last_7d}`}
             color="#e67e22"
           />
-          <StatCard
-            title="照片访问（今日）"
-            value={overview.picture_view_today}
-            subtitle={`最近7天: ${overview.picture_view_last_7d}`}
-            color="#1abc9c"
-          />
+          <div onClick={() => {
+            console.log('[AdminOverview] Navigating to /admin/photos');
+            navigate('/admin/photos');
+          }} style={{ cursor: 'pointer' }}>
+            <StatCard
+              title="待审核照片"
+              value={overview.pending_photos}
+              color="#e74c3c"
+            />
+          </div>
         </div>
 
         {/* Recent Actions */}

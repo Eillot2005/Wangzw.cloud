@@ -24,6 +24,7 @@ export default function AdminMessagesPage() {
 
   useEffect(() => {
     loadMessages();
+    messagesApi.markRead(); // Mark messages as read when admin views them
     // Auto refresh every 30 seconds
     const interval = setInterval(loadMessages, 30000);
     return () => clearInterval(interval);
@@ -243,7 +244,15 @@ export default function AdminMessagesPage() {
                         paddingLeft: fromAdmin ? '0' : '12px',
                         paddingRight: fromAdmin ? '12px' : '0',
                       }}>
-                        {new Date(msg.created_at).toLocaleString('zh-CN')}
+                        {new Date(msg.created_at + 'Z').toLocaleString('zh-CN', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                          hour12: false
+                        })}
                       </div>
                     </div>
                   </motion.div>

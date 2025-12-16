@@ -13,16 +13,21 @@ export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('token');
+      console.log('[ProtectedRoute] Checking auth, token exists:', !!token);
       if (!token) {
+        console.log('[ProtectedRoute] No token found');
         setIsAuthenticated(false);
         return;
       }
 
       try {
+        console.log('[ProtectedRoute] Calling authApi.getMe()');
         const userInfo = await authApi.getMe();
+        console.log('[ProtectedRoute] Auth success, role:', userInfo.role);
         setUserRole(userInfo.role);
         setIsAuthenticated(true);
       } catch (error) {
+        console.error('[ProtectedRoute] Auth failed:', error);
         setIsAuthenticated(false);
         localStorage.removeItem('token');
         localStorage.removeItem('role');

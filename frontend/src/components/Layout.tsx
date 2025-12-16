@@ -1,5 +1,6 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { messagesApi } from '../api/messages';
 
 interface LayoutProps {
   children: ReactNode;
@@ -9,6 +10,43 @@ interface LayoutProps {
 export default function Layout({ children, role }: LayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showToast, setShowToast] = useState(false);
+  const prevUnreadRef = useRef(0);
+
+  // Polling for unread messages
+  useEffect(() => {
+    const checkUnread = async () => {
+      try {
+        const data = await messagesApi.getUnreadCount();
+        const count = data.unread;
+        
+        if (count > prevUnreadRef.current && count > 0) {
+          setShowToast(true);
+          setTimeout(() => setShowToast(false), 3000);
+        }
+        
+        setUnreadCount(count);
+        prevUnreadRef.current = count;
+      } catch (error) {
+        console.error("Polling error", error);
+      }
+    };
+
+    // Initial check
+    checkUnread();
+
+    const interval = setInterval(checkUnread, 8000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Reset unread when visiting messages page
+  useEffect(() => {
+    if (location.pathname.includes('messages')) {
+      setUnreadCount(0);
+      prevUnreadRef.current = 0;
+    }
+  }, [location.pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -21,6 +59,7 @@ export default function Layout({ children, role }: LayoutProps) {
     { path: '/admin/audit', label: '审计日志' },
     { path: '/admin/friend-todos', label: '朋友的待办' },
     { path: '/admin/friend-messages', label: '留言墙' },
+    { path: '/admin/photos', label: '照片审核' },
   ] : [
     { path: '/app/countdown', label: '纪念日' },
     { path: '/app/pictures', label: '照片' },
@@ -30,6 +69,36 @@ export default function Layout({ children, role }: LayoutProps) {
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: 'sans-serif' }}>
+      {/* Toast Notification */}
+      {showToast && (
+        <div 
+          onClick={() => navigate(role === 'ADMIN' ? '/admin/friend-messages' : '/app/messages')}
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            background: 'rgba(255, 105, 180, 0.9)',
+            color: 'white',
+            padding: '15px 25px',
+            borderRadius: '12px',
+            boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
+            zIndex: 1000,
+            cursor: 'pointer',
+            animation: 'slideIn 0.3s ease-out',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            backdropFilter: 'blur(5px)'
+          }}
+        >
+          <span style={{ fontSize: '20px' }}>💌</span>
+          <div>
+            <div style={{ fontWeight: 'bold' }}>收到一条新留言</div>
+            <div style={{ fontSize: '12px', opacity: 0.9 }}>点击查看</div>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar */}
       <div style={{
         width: '260px',
@@ -99,6 +168,20 @@ export default function Layout({ children, role }: LayoutProps) {
               }}
             >
               {item.label}
+              {item.label === '留言墙' && unreadCount > 0 && (
+                <span style={{
+                  marginLeft: 'auto',
+                  background: '#ff4757',
+                  color: 'white',
+                  borderRadius: '10px',
+                  padding: '2px 8px',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                }}>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </div>
           ))}
         </nav>

@@ -19,8 +19,7 @@ export interface Overview {
   message_total: number;
   external_call_today: number;
   external_call_last_7d: number;
-  picture_view_today: number;
-  picture_view_last_7d: number;
+  pending_photos: number;
   last_actions: Array<{
     id: number;
     action: string;

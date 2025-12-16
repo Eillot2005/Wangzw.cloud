@@ -188,7 +188,15 @@ export default function AuditLogPage() {
                     {log.meta_json ? JSON.stringify(log.meta_json).substring(0, 100) : '-'}
                   </td>
                   <td style={{ padding: '12px', fontSize: '12px', color: '#999', whiteSpace: 'nowrap' }}>
-                    {new Date(log.created_at).toLocaleString('zh-CN')}
+                    {new Date(log.created_at + 'Z').toLocaleString('zh-CN', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                      hour12: false
+                    })}
                   </td>
                 </tr>
               ))}

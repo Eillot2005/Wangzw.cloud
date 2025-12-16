@@ -28,4 +28,13 @@ export const messagesApi = {
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/messages/${id}`);
   },
+
+  getUnreadCount: async (): Promise<{ unread: number }> => {
+    const response = await apiClient.get<{ unread: number }>('/messages/unread_count');
+    return response.data;
+  },
+
+  markRead: async (): Promise<void> => {
+    await apiClient.post('/messages/mark_read');
+  },
 };

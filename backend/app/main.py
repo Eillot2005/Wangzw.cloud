@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.db.init_db import init_db
-from app.routers import auth, todos, messages, external, pictures, admin
+from app.routers import auth, todos, messages, external, pictures, admin, photos
 
 
 @asynccontextmanager
@@ -43,6 +43,7 @@ app.include_router(todos.router)
 app.include_router(messages.router)
 app.include_router(external.router)
 app.include_router(pictures.router)
+app.include_router(photos.router)
 app.include_router(admin.router)
 
 

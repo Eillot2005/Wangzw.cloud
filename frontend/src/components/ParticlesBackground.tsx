@@ -14,25 +14,14 @@ export default function ParticlesBackground() {
         value: 'transparent',
       },
     },
-    fpsLimit: 60,
+    fpsLimit: 30,
     interactivity: {
       events: {
         onClick: {
-          enable: true,
-          mode: "push",
+          enable: false,
         },
         onHover: {
-          enable: true,
-          mode: "repulse",
-        },
-      },
-      modes: {
-        push: {
-          quantity: 4,
-        },
-        repulse: {
-          distance: 100,
-          duration: 0.4,
+          enable: false,
         },
       },
     },
@@ -56,16 +45,16 @@ export default function ParticlesBackground() {
       number: {
         density: {
           enable: true,
-          area: 800,
+          area: 1000,
         },
-        value: 60,
+        value: 30,
       },
       opacity: {
-        value: { min: 0.3, max: 0.8 },
+        value: { min: 0.3, max: 0.7 },
         animation: {
           enable: true,
-          speed: 1,
-          minimumValue: 0.1,
+          speed: 0.5,
+          minimumValue: 0.2,
           sync: false,
         },
       },
@@ -73,20 +62,16 @@ export default function ParticlesBackground() {
         type: 'heart',
       },
       size: {
-        value: { min: 10, max: 25 },
+        value: { min: 12, max: 20 },
         animation: {
-          enable: true,
-          speed: 3,
-          minimumValue: 10,
-          sync: false,
+          enable: false,
         },
       },
       rotate: {
         value: { min: 0, max: 360 },
         direction: 'random' as const,
         animation: {
-          enable: true,
-          speed: 5,
+          enable: false,
         },
       },
     },
