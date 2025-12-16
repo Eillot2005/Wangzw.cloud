@@ -1,0 +1,160 @@
+import { useState, FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { authApi } from '../api/auth';
+
+export default function Login() {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('=== Login form submitted ===');
+    console.log('Username:', username);
+    
+    setError('');
+    setLoading(true);
+
+    try {
+      console.log('Attempting login...');
+      const response = await authApi.login({ username, password });
+      console.log('Login response:', response);
+      
+      localStorage.setItem('token', response.access_token);
+      localStorage.setItem('role', response.role);
+
+      console.log('Stored token and role, navigating...');
+      
+      // Redirect based on role (backend returns uppercase: "ADMIN" or "FRIEND")
+      if (response.role === 'ADMIN') {
+        console.log('Navigating to /admin');
+        navigate('/admin');
+      } else if (response.role === 'FRIEND') {
+        console.log('Navigating to /app');
+        navigate('/app');
+      }
+    } catch (err: any) {
+      console.error('Login error:', err);
+      console.error('Error details:', err.response?.data);
+      setError(err.response?.data?.detail || '登录失败，请检查用户名和密码');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#34495e',
+      fontFamily: 'sans-serif'
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: '40px',
+        borderRadius: '8px',
+        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+        width: '100%',
+        maxWidth: '400px'
+      }}>
+        <h1 style={{ marginBottom: '30px', textAlign: 'center', color: '#2c3e50' }}>
+          登录
+        </h1>
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', color: '#555' }}>
+              用户名
+            </label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                fontSize: '14px',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', color: '#555' }}>
+              密码
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                fontSize: '14px',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          {error && (
+            <div style={{
+              padding: '12px',
+              backgroundColor: '#fee',
+              color: '#c33',
+              borderRadius: '4px',
+              marginBottom: '20px',
+              fontSize: '14px'
+            }}>
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '12px',
+              backgroundColor: loading ? '#95a5a6' : '#3498db',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              fontSize: '16px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              transition: 'background-color 0.2s'
+            }}
+          >
+            {loading ? '登录中...' : '登录'}
+          </button>
+        </form>
+
+        <div style={{
+          marginTop: '20px',
+          padding: '12px',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '4px',
+          fontSize: '12px',
+          color: '#666'
+        }}>
+          <p style={{ margin: '0 0 8px 0' }}>
+            <strong>测试账号：</strong>
+          </p>
+          <p style={{ margin: '4px 0' }}>管理员: admin</p>
+          <p style={{ margin: '4px 0' }}>普通用户: friend</p>
+        </div>
+      </div>
+    </div>
+  );
+}

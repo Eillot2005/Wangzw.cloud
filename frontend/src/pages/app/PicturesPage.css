@@ -1,0 +1,81 @@
+/* 照片墙瀑布流样式 */
+.pictures-masonry {
+  display: flex;
+  margin-left: -16px;
+  width: auto;
+}
+
+.pictures-masonry-column {
+  padding-left: 16px;
+  background-clip: padding-box;
+}
+
+.picture-card {
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.picture-image-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px 16px 0 0;
+}
+
+.picture-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.picture-card:hover .picture-image {
+  transform: scale(1.1);
+}
+
+.picture-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 107, 157, 0.8), rgba(196, 69, 105, 0.8));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.picture-card:hover .picture-overlay {
+  opacity: 1;
+}
+
+.picture-caption {
+  padding: 12px 16px 8px;
+  color: #f5f5f5;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.picture-date {
+  padding: 0 16px 12px;
+  color: #c5c5c5;
+  font-size: 12px;
+}
+
+/* 淡入动画 */
+@keyframes pictureSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.picture-card {
+  animation: pictureSlideIn 0.6s ease-out;
+}
