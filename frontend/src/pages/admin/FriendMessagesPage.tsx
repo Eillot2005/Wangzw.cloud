@@ -9,7 +9,6 @@ export default function AdminMessagesPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newContent, setNewContent] = useState('');
   const [loading, setLoading] = useState(false);
-  const currentUser = localStorage.getItem('username') || '';
 
   const loadMessages = async () => {
     setLoading(true);
