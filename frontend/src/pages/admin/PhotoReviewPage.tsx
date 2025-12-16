@@ -57,7 +57,7 @@ export default function PhotoReviewPage() {
   return (
     <Layout role="ADMIN">
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
-        <h1 style={{ marginBottom: '20px', color: theme.colors.textPrimary }}>照片审核</h1>
+        <h1 style={{ marginBottom: '20px', color: theme.colors.text }}>照片审核</h1>
         
         {loading ? (
           <div>加载中...</div>
@@ -75,7 +75,7 @@ export default function PhotoReviewPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 style={{
-                  background: theme.colors.surface,
+                  background: theme.colors.card,
                   borderRadius: theme.borderRadius.medium,
                   padding: '15px',
                   boxShadow: theme.colors.shadow,
@@ -110,7 +110,7 @@ export default function PhotoReviewPage() {
                     style={{
                       flex: 1,
                       padding: '8px',
-                      background: theme.colors.success,
+                      background: '#2ecc71',
                       color: 'white',
                       border: 'none',
                       borderRadius: theme.borderRadius.small,
@@ -124,7 +124,7 @@ export default function PhotoReviewPage() {
                     style={{
                       flex: 1,
                       padding: '8px',
-                      background: theme.colors.error,
+                      background: '#e74c3c',
                       color: 'white',
                       border: 'none',
                       borderRadius: theme.borderRadius.small,

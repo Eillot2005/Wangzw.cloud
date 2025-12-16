@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Layout from '../../components/Layout';
-import ParticlesBackground from '../../components/ParticlesBackground';
 import { photosApi, Photo } from '../../api/photos';
 import { theme } from '../../styles/theme';
 import './PicturesPage.css';
@@ -148,7 +147,6 @@ export default function PicturesPage() {
                   zIndex: 10,
                   boxShadow: "0 20px 40px -12px rgba(255, 105, 180, 0.5)" 
                 }}
-                style={{ willChange: 'transform' }}
                 className="picture-card romantic-card"
                 onClick={() => setSelectedImage(picture)}
                 style={{ 
@@ -159,9 +157,10 @@ export default function PicturesPage() {
                   borderRadius: '20px',
                   overflow: 'hidden',
                   padding: '10px',
-                  height: '350px', // Fixed height for card
+                  height: '350px',
                   display: 'flex',
                   flexDirection: 'column',
+                  willChange: 'transform',
                 }}
               >
                 <div className="picture-image-container" style={{ 
