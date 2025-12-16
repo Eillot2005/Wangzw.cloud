@@ -20,49 +20,70 @@ def migrate():
     print("✓ Created new tables (if missing)")
 
     # 2. Alter existing tables (messages)
-    # SQLite doesn't support simple ALTER TABLE for adding columns with constraints easily in all versions,
-    # but for adding nullable columns it's usually fine.
-    # We'll use raw SQL for simplicity as we don't have Alembic set up.
+    # Use separate transactions for each column to avoid transaction rollback issues
     
-    with engine.connect() as conn:
-        # Check if columns exist in messages
+    # Check and add receiver_id
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT receiver_id FROM messages LIMIT 1"))
+            print("✓ 'receiver_id' column already exists")
+    except Exception:
+        print("Adding 'receiver_id' column...")
         try:
-            # Try to select the new columns to see if they exist
-            conn.execute(text("SELECT receiver_id, read_at FROM messages LIMIT 1"))
-            print("✓ 'messages' table already has new columns")
-        except Exception:
-            print("Adding columns to 'messages' table...")
-            try:
-                conn.execute(text("ALTER TABLE messages ADD COLUMN receiver_id INTEGER REFERENCES users(id)"))
-                conn.execute(text("ALTER TABLE messages ADD COLUMN read_at DATETIME"))
-                conn.commit()
-                print("✓ Added 'receiver_id' and 'read_at' to 'messages'")
-            except Exception as e:
-                print(f"Error altering table: {e}")
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE messages ADD COLUMN receiver_id INTEGER"))
+            print("✓ Added 'receiver_id' column")
+        except Exception as e:
+            print(f"Note: {e}")
+    
+    # Check and add read_at
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT read_at FROM messages LIMIT 1"))
+            print("✓ 'read_at' column already exists")
+    except Exception:
+        print("Adding 'read_at' column...")
+        try:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE messages ADD COLUMN read_at TIMESTAMP"))
+            print("✓ Added 'read_at' column")
+        except Exception as e:
+            print(f"Note: {e}")
 
     # 3. Backfill receiver_id for existing messages
+    print("Backfilling receiver_id...")
     db = SessionLocal()
     try:
         admin = db.query(User).filter(User.username == "admin").first()
         friend = db.query(User).filter(User.username == "wangzw").first()
         
         if admin and friend:
-            # Messages from admin -> friend
-            db.execute(
-                text("UPDATE messages SET receiver_id = :friend_id WHERE sender_id = :admin_id AND receiver_id IS NULL"),
-                {"friend_id": friend.id, "admin_id": admin.id}
-            )
+            # Count messages that need backfilling
+            result = db.execute(text("SELECT COUNT(*) FROM messages WHERE receiver_id IS NULL"))
+            count = result.scalar()
             
-            # Messages from friend -> admin
-            db.execute(
-                text("UPDATE messages SET receiver_id = :admin_id WHERE sender_id = :friend_id AND receiver_id IS NULL"),
-                {"admin_id": admin.id, "friend_id": friend.id}
-            )
-            
-            db.commit()
-            print("✓ Backfilled receiver_id for existing messages")
+            if count > 0:
+                # Messages from admin -> friend
+                db.execute(
+                    text("UPDATE messages SET receiver_id = :friend_id WHERE sender_id = :admin_id AND receiver_id IS NULL"),
+                    {"friend_id": friend.id, "admin_id": admin.id}
+                )
+                
+                # Messages from friend -> admin
+                db.execute(
+                    text("UPDATE messages SET receiver_id = :admin_id WHERE sender_id = :friend_id AND receiver_id IS NULL"),
+                    {"admin_id": admin.id, "friend_id": friend.id}
+                )
+                
+                db.commit()
+                print(f"✓ Backfilled receiver_id for {count} existing messages")
+            else:
+                print("✓ No messages need backfilling")
+        else:
+            print("⚠ Could not find admin or friend user for backfilling")
     except Exception as e:
-        print(f"Error backfilling data: {e}")
+        print(f"Note during backfilling: {e}")
+        db.rollback()
     finally:
         db.close()
         
