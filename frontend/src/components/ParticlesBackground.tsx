@@ -96,6 +96,7 @@ export default function ParticlesBackground() {
   return (
     <Particles
       id="tsparticles"
+      // @ts-ignore
       init={particlesInit}
       options={options}
       style={{

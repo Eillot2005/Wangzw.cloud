@@ -157,7 +157,6 @@ export default function AdminMessagesPage() {
             <AnimatePresence>
               {messages.map((msg, index) => {
                 const fromAdmin = isFromAdmin(msg.sender_username);
-                const isCurrentUser = msg.sender_username === currentUser;
                 
                 return (
                   <motion.div

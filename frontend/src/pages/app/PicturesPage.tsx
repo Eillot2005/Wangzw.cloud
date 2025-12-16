@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Masonry from 'react-masonry-css';
 import Layout from '../../components/Layout';
 import ParticlesBackground from '../../components/ParticlesBackground';
 import { picturesApi, PictureInfo } from '../../api/pictures';
@@ -33,12 +32,6 @@ export default function PicturesPage() {
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
     const token = localStorage.getItem('token');
     return `${apiBaseUrl}/pictures/${filename}?token=${token}`;
-  };
-
-  const breakpointColumns = {
-    default: 3,
-    1100: 2,
-    700: 1,
   };
 
   return (
